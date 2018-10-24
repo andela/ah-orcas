@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/andela/ah-orcas.svg?branch=develop)](https://travis-ci.org/andela/ah-orcas)
+[![Maintainability](https://api.codeclimate.com/v1/badges/953068b659b6f962b842/maintainability)](https://codeclimate.com/github/andela/ah-orcas/maintainability)
 
 # Authors Haven - A Social platform for the creative at heart.
 
