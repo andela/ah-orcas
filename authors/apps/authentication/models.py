@@ -6,13 +6,15 @@ from django.conf import settings
 from django.contrib.auth.models import (
     AbstractBaseUser, BaseUserManager, PermissionsMixin
 )
+from django.core.validators import RegexValidator
 from django.db import models
+
 
 class UserManager(BaseUserManager):
     """
     Django requires that custom users define their own Manager class. By
     inheriting from `BaseUserManager`, we get a lot of the same code used by
-    Django to create a `User` for free. 
+    Django to create a `User` for free.
 
     All we have to do is override the `create_user` function which we will use
     to create `User` objects.
@@ -33,28 +35,33 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, username, email, password):
-      """
-      Create and return a `User` with superuser powers.
+        """
+        Create and return a `User` with superuser powers.
 
-      Superuser powers means that this use is an admin that can do anything
-      they want.
-      """
-      if password is None:
-          raise TypeError('Superusers must have a password.')
+        Superuser powers means that this use is an admin that can do anything
+        they want.
+        """
+        if password is None:
+            raise TypeError('Superusers must have a password.')
 
-      user = self.create_user(username, email, password)
-      user.is_superuser = True
-      user.is_staff = True
-      user.save()
+        user = self.create_user(username, email, password)
+        user.is_superuser = True
+        user.is_staff = True
+        user.save()
 
-      return user
+        return user
 
 
 class User(AbstractBaseUser, PermissionsMixin):
     # Each `User` needs a human-readable unique identifier that we can use to
     # represent the `User` in the UI. We want to index this column in the
     # database to improve lookup performance.
-    username = models.CharField(db_index=True, max_length=255, unique=True)
+    re = RegexValidator(r'^[0-9a-zA-Z]*$', 'Alphanumeric characters only')
+    username = models.CharField(
+        db_index=True,
+        max_length=255,
+        unique=True,
+        validators=[re])
 
     # We also need a way to contact the user and a way for the user to identify
     # themselves when logging in. Since we need an email address for contacting
@@ -100,21 +107,38 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         return self.email
 
-    @property
-    def get_full_name(self):
-      """
-      This method is required by Django for things like handling emails.
-      Typically, this would be the user's first and last name. Since we do
-      not store the user's real name, we return their username instead.
-      """
-      return self.username
+    def token(self):
+        return self.encode_auth_token()
 
-    def get_short_name(self):
+    def encode_auth_token(self):
         """
-        This method is required by Django for things like handling emails.
-        Typically, this would be the user's first name. Since we do not store
-        the user's real name, we return their username instead.
+        Create payload and use it to generate JWT token
+        :return: encoded token
         """
-        return self.username
+        payload = {
+            'exp': datetime.utcnow() + timedelta(days=7),
+            'iat': datetime.utcnow(),
+            'id': self.pk,
+        }
+
+        tk = jwt.encode(payload, settings.SECRET_KEY, 'HS256')
+        return tk
 
 
+@property
+def get_full_name(self):
+    """
+    This method is required by Django for things like handling emails.
+    Typically, this would be the user's first and last name. Since we do
+    not store the user's real name, we return their username instead.
+    """
+    return self.username
+
+
+def get_short_name(self):
+    """
+    This method is required by Django for things like handling emails.
+    Typically, this would be the user's first name. Since we do not store
+    the user's real name, we return their username instead.
+    """
+    return self.username
