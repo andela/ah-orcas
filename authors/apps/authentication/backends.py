@@ -1,20 +1,15 @@
-# import jwt
-#
-# from django.conf import settings
-#
 import jwt
+#
+from django.conf import settings
 from django.http import HttpResponse
+from rest_framework.authentication import get_authorization_header
 from rest_framework import authentication, exceptions
 #
-# from .models import User
-from rest_framework.authentication import get_authorization_header
-
-from authors import settings
-from authors.apps.authentication.models import User
+from .models import User
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
-    """Validate JWT token"""
+    """Configures JWT"""
 
     def authenticate(self, request):
         auth = get_authorization_header(request).split()

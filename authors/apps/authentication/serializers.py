@@ -167,3 +167,28 @@ class EmailSerializer(serializers.Serializer):
             'email': data['email'],
             'token': token
         }
+
+
+class ForgetPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    class Meta:
+        model = User
+        fields = ('email',)
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    """
+    reset password serializer
+    """
+    reval = RegexValidator(r"\d+", "Password must contain at least one digit")
+    password = serializers.CharField(
+        max_length=128,
+        min_length=8,
+        write_only=True,
+        validators=[reval]
+    )
+
+    class Meta:
+        model = User
+        fields = ('password',)

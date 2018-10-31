@@ -4,19 +4,23 @@ from rest_framework import status
 from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from django.template.loader import render_to_string
 from django.core.mail import send_mail
 from rest_framework.views import APIView
-
 from authors.settings import EMAIL_HOST_USER
 from authors.settings import DEFAULT_DOMAIN
 from authors.settings import SECRET_KEY
-
+from django.template.loader import render_to_string
+from rest_framework import serializers
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.shortcuts import get_current_site
 from .renderers import UserJSONRenderer
-from .serializers import (
-    LoginSerializer, RegistrationSerializer, UserSerializer
-)
 from .models import User
+from .serializers import (
+    LoginSerializer,
+    RegistrationSerializer,
+    UserSerializer,
+    ResetPasswordSerializer,
+    ForgetPasswordSerializer)
 
 
 class RegistrationAPIView(CreateAPIView):
@@ -125,5 +129,97 @@ class VerifyAPIView(APIView):
                             status=status.HTTP_401_UNAUTHORIZED)
 
 
+class ForgetPassword(APIView):
+    """
+    send password reset token to email
+    """
+    permission_classes = (AllowAny,)
+    renderer_classes = (UserJSONRenderer,)
+    serializer_class = ForgetPasswordSerializer
+
+    def post(self, request):
+        """
+        this method sends reset token in a link to a registered user
+    """
+        data = request.data.get('user', {})
+        serializer = self.serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            user = User.objects.get(email=data['email'])
+        except (User.DoesNotExist):
+            raise serializers.ValidationError(
+                'A user with this email was not found.'
+            )
+        token = default_token_generator.make_token(user)
+        domain = get_current_site(request).domain
+        subject = "Reset Password"
+        hashed_email = jwt.encode(
+            {"email": data['email']}, SECRET_KEY, algorithm='HS256')
+        our_link = "http://" + domain + '/api/users/reset/' + \
+            hashed_email.decode('UTF-8') + "/" + token
+        msg = render_to_string('activate_account.html', {
+            'user': user.username,
+            "link": our_link
+        })
+        send_mail('Authors Heaven Password Reset!',
+                  'Password Reset',
+                  EMAIL_HOST_USER,
+                  [data['email']],
+                  html_message=msg,
+                  fail_silently=False)
+
+        return Response(
+            {"response": "Confirm your email to continue"},
+            status=status.HTTP_200_OK)
 
 
+class ResetPassword(APIView):
+    """
+    reset password class
+    """
+    permission_classes = (AllowAny,)
+    renderer_classes = (UserJSONRenderer,)
+    serializer_class = ResetPasswordSerializer
+
+    def get(self, request, **kwargs):
+        """verify the token on get"""
+        token = kwargs.get('token')
+        hashed_email = kwargs.get('hashed_email')
+        data = jwt.decode(hashed_email, SECRET_KEY, algorithm='HS256')
+        user = User.objects.get(email=data['email'])
+        if not default_token_generator.check_token(user, token):
+            return Response({"response": 'Invalid reset tokens'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        return Response(
+            {"response": "email confirmed successfully",
+             "email": data["email"]})
+
+    def put(self, request, **kwargs):
+        """
+        actually password reset is done here
+        """
+        token = kwargs.get('token')
+        hashed_email = kwargs.get('hashed_email')
+        data = jwt.decode(hashed_email, SECRET_KEY, algorithm='HS256')
+        user = None
+        try:
+            user = User.objects.get(email=data['email'])
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response(
+                {"response": 'A user with this email was not found.'})
+        if not default_token_generator.check_token(user, token):
+            return Response({"response": 'Invalid reset tokens'},
+                            status=status.HTTP_401_UNAUTHORIZED)
+        new_password = request.data.get('user')
+        user.set_password(new_password)
+        user.save()
+        msg = render_to_string('alert_reset_password.html', {
+            'user': user.username
+        })
+        send_mail('Authors Heaven Password Reset!',
+                  'Reset password.',
+                  EMAIL_HOST_USER,
+                  [data['email']],
+                  html_message=msg,
+                  fail_silently=False)
+        return Response({'response': 'password successfully changed'})
