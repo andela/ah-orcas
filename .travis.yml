@@ -1,12 +1,22 @@
 language: python
 python:
   - "3.6"
-
+services:
+  - postgresql
+before_script:
+  - psql -c 'create database testdb;' -U postgres
 install:
-  - "pip install pytest"
   - "pip install -r requirements.txt"
   - "pip install coveralls"
+  - "pip install coverage"
 
 script:
-  - echo orcas
+  - python3 manage.py makemigrations
+  - python3 manage.py migrate
+  - coverage run manage.py test
+  - coverage report
+
+after_success:
+  - coveralls
+
 
