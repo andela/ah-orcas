@@ -84,6 +84,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     # falsed.
     is_staff = models.BooleanField(default=False)
 
+    # at signup let the user confirmed status be false
+    is_confirmed_email = models.BooleanField(default=False)
+
     # A timestamp representing when this object was created.
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -124,7 +127,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         }
 
         tk = jwt.encode(payload, settings.SECRET_KEY, 'HS256')
-        return tk
+        return tk.decode()
 
 
 @property
