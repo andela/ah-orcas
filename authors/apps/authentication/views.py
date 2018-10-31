@@ -135,7 +135,7 @@ class VerifyAPIView(APIView):
                             status=status.HTTP_401_UNAUTHORIZED)
 
 
-class ForgetPassword(APIView):
+class ForgetPassword(CreateAPIView):
     """
     send password reset token to email
     """
@@ -158,11 +158,10 @@ class ForgetPassword(APIView):
             )
         token = default_token_generator.make_token(user)
         domain = get_current_site(request).domain
-        subject = "Reset Password"
         hashed_email = jwt.encode(
             {"email": data['email']}, SECRET_KEY, algorithm='HS256')
         our_link = "http://" + domain + '/api/users/reset/' + \
-                   hashed_email.decode('UTF-8') + "/" + token
+            hashed_email.decode('UTF-8') + "/" + token
         msg = render_to_string('activate_account.html', {
             'user': user.username,
             "link": our_link
