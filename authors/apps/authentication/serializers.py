@@ -150,9 +150,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class EmailSerializer(serializers.Serializer):
-    '''
-    Serializes user emails
-    '''
+    """
+     Serializes user emails
+    """
     email = serializers.EmailField(max_length=255)
     token = serializers.CharField(max_length=255, required=False)
 

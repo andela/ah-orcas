@@ -1,12 +1,12 @@
 import os
 import jwt
 from rest_framework import status
-from rest_framework.generics import RetrieveUpdateAPIView
+from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from django.template.loader import render_to_string
 from django.core.mail import send_mail
+from rest_framework.views import APIView
 
 from authors.settings import EMAIL_HOST_USER
 from authors.settings import DEFAULT_DOMAIN
@@ -19,13 +19,16 @@ from .serializers import (
 from .models import User
 
 
-class RegistrationAPIView(APIView):
+class RegistrationAPIView(CreateAPIView):
+    """
+    Register a new user
+    """
     # Allow any user (authenticated or not) to hit this endpoint.
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = RegistrationSerializer
 
-    def post(self, request):
+    def post(self, request, **kwargs):
         user = request.data.get('user', {})
 
         # The create serializer, validate serializer, save serializer pattern
@@ -53,12 +56,15 @@ class RegistrationAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class LoginAPIView(APIView):
+class LoginAPIView(CreateAPIView):
+    """
+    Login a registered user
+    """
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = LoginSerializer
 
-    def post(self, request):
+    def post(self, request, **kwargs):
         user = request.data.get('user', {})
 
         # Notice here that we do not call `serializer.save()` like we did for
@@ -99,9 +105,9 @@ class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
 
 
 class VerifyAPIView(APIView):
-    '''
-    this class verifies a user based on the token sent to their email address.
-    '''
+    """
+    Verifies a user based on the token sent to their email address.
+    """
 
     def get(self, request, token):
         try:
