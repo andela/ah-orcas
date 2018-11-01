@@ -56,12 +56,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     # Each `User` needs a human-readable unique identifier that we can use to
     # represent the `User` in the UI. We want to index this column in the
     # database to improve lookup performance.
-    re = RegexValidator(r'^[0-9a-zA-Z]*$', 'Alphanumeric characters only')
+    reval = RegexValidator(
+        r'^[0-9a-zA-Z]*$',
+        'Username should only contain alphanumeric characters')
     username = models.CharField(
         db_index=True,
         max_length=255,
         unique=True,
-        validators=[re])
+        validators=[reval])
 
     # We also need a way to contact the user and a way for the user to identify
     # themselves when logging in. Since we need an email address for contacting
