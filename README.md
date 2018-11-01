@@ -1,6 +1,5 @@
 [![Build Status](https://travis-ci.org/andela/ah-orcas.svg?branch=develop)](https://travis-ci.org/andela/ah-orcas)
 [![Maintainability](https://api.codeclimate.com/v1/badges/953068b659b6f962b842/maintainability)](https://codeclimate.com/github/andela/ah-orcas/maintainability)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/73da9c05e8aa426d881a89d96a5686d6)](https://www.codacy.com/app/abadojack/ah-orcas?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=andela/ah-orcas&amp;utm_campaign=Badge_Grade)
 [![Coverage Status](https://coveralls.io/repos/github/andela/ah-orcas/badge.svg?branch=develop)](https://coveralls.io/github/andela/ah-orcas?branch=develop)
 
 # Authors Haven - A Social platform for the creative at heart.

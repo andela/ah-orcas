@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from django.core.validators import RegexValidator
+from django.contrib.auth.tokens import default_token_generator
 
 from rest_framework import serializers
 
@@ -146,3 +147,23 @@ class UserSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+
+class EmailSerializer(serializers.Serializer):
+    '''
+    Serializes user emails
+    '''
+    email = serializers.EmailField(max_length=255)
+    token = serializers.CharField(max_length=255, required=False)
+
+    def validate(self, data):
+        user_email_exist = User.objects.filter(
+            email=data.get('email', None)).first()
+        if not user_email_exist:
+            raise serializers.ValidationError(
+                'The email provided does not exist')
+        token = default_token_generator.make_token(user_email_exist)
+        return{
+            'email': data['email'],
+            'token': token
+        }
