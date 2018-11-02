@@ -1,3 +1,2 @@
-release: python3 manage.py makemigrations
-release: python3 manage.py migrate
+release: ./release-tasks.sh
 web: gunicorn authors.wsgi
