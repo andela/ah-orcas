@@ -1,13 +1,12 @@
 from django.urls import path
 from rest_framework_swagger.views import get_swagger_view
 
-from .views import (
-    LoginAPIView,
-    RegistrationAPIView,
-    UserRetrieveUpdateAPIView,
-    ForgetPassword,
-    ResetPassword)
 from . import views
+from .views import (
+    ForgetPassword,
+    ResetPassword,
+    LoginAPIView, RegistrationAPIView, UserRetrieveUpdateAPIView,
+    SocialAuthView)
 
 schema_view = get_swagger_view(title="Orcas API Documentation")
 
@@ -37,4 +36,5 @@ urlpatterns = [
     path(
         'users/reset/<str:hashed_email>/<str:token>',
         ResetPassword.as_view(),
-        name='reset')]
+        name='reset'),
+    path('social_auth/', SocialAuthView.as_view(), name="social_auth")]

@@ -108,10 +108,14 @@ class UserSerializer(serializers.ModelSerializer):
         min_length=8,
         write_only=True
     )
+    token = serializers.CharField(
+        max_length=128,
+        read_only=True
+    )
 
     class Meta:
         model = User
-        fields = ('email', 'username', 'password')
+        fields = ('email', 'username', 'password', 'token')
 
         # The `read_only_fields` option is an alternative for explicitly
         # specifying the field with `read_only=True` like we did for password
@@ -163,7 +167,7 @@ class EmailSerializer(serializers.Serializer):
             raise serializers.ValidationError(
                 'The email provided does not exist')
         token = default_token_generator.make_token(user_email_exist)
-        return{
+        return {
             'email': data['email'],
             'token': token
         }
@@ -192,3 +196,9 @@ class ResetPasswordSerializer(serializers.Serializer):
     class Meta:
         model = User
         fields = ('password',)
+
+
+class SocialSignUpSerializer(serializers.Serializer):
+    provider = serializers.CharField(max_length=255, required=True)
+    access_token = serializers.CharField(
+        max_length=1024, required=True, trim_whitespace=True)
