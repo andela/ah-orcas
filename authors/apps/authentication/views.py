@@ -1,24 +1,30 @@
 import os
+
 import jwt
-from rest_framework import status
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from rest_framework import serializers
+from rest_framework import status, generics
 from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from django.core.mail import send_mail
 from rest_framework.views import APIView
-from authors.settings import EMAIL_HOST_USER
+from social_core.backends.oauth import BaseOAuth1, BaseOAuth2
+from social_core.exceptions import AuthAlreadyAssociated
+from social_core.exceptions import MissingBackend
+from social_django.utils import load_strategy, load_backend
+
 from authors.settings import DEFAULT_DOMAIN
+from authors.settings import EMAIL_HOST_USER
 from authors.settings import SECRET_KEY
-from django.template.loader import render_to_string
-from rest_framework import serializers
-from django.contrib.auth.tokens import default_token_generator
-from django.contrib.sites.shortcuts import get_current_site
-from .renderers import UserJSONRenderer
 from .models import User
+from .renderers import UserJSONRenderer
 from .serializers import (
-    LoginSerializer,
-    RegistrationSerializer,
-    UserSerializer,
+    LoginSerializer, RegistrationSerializer, UserSerializer,
+    SocialSignUpSerializer)
+from .serializers import (
     ResetPasswordSerializer,
     ForgetPasswordSerializer)
 
@@ -156,7 +162,7 @@ class ForgetPassword(APIView):
         hashed_email = jwt.encode(
             {"email": data['email']}, SECRET_KEY, algorithm='HS256')
         our_link = "http://" + domain + '/api/users/reset/' + \
-            hashed_email.decode('UTF-8') + "/" + token
+                   hashed_email.decode('UTF-8') + "/" + token
         msg = render_to_string('activate_account.html', {
             'user': user.username,
             "link": our_link
@@ -223,3 +229,99 @@ class ResetPassword(APIView):
                   html_message=msg,
                   fail_silently=False)
         return Response({'response': 'password successfully changed'})
+
+
+class SocialAuthView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = SocialSignUpSerializer
+    permission_classes = (AllowAny,)
+    renderer_classes = (UserJSONRenderer,)
+
+    def create(self, request, *args, **kwargs):
+        """
+        Override `create` instead of `perform_create` to access request
+        request is necessary for `load_strategy`
+        """
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        return self.create_token(request, serializer)
+
+    def create_token(self, request, serializer):
+        provider = request.data['provider']
+
+        # passing `request` to `load_strategy`,
+        # python-social-auth knows to use the Django strategy.
+        # `strategy` is a PSA concept for referencing Python frameworks
+        # (e.g. Flask, Django, etc.)
+        strategy = load_strategy(request)
+
+        # get backend corresponding to our user's social auth provider
+        # i.e. Google, Facebook, Twitter
+        try:
+            backend = load_backend(
+                strategy=strategy, name=provider, redirect_uri=None)
+        except MissingBackend as e:
+            return Response({
+                "errors": {
+                    "provider": ["Provider not found.", str(e)]
+                }
+
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        if isinstance(backend, BaseOAuth1):
+            try:
+                # Twitter uses OAuth1 and requires that you also pass
+                # an `oauth_token_secret` with your authentication request
+                token = {
+                    'oauth_token': serializer.data['access_token'],
+                    'oauth_token_secret': request.data['access_token_secret'],
+                }
+            except KeyError:
+                return Response({
+                    "errors": "provide access_token and/or access_token_secret"
+
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        elif isinstance(backend, BaseOAuth2):
+            # only access token required for oauth2
+            token = serializer.data['access_token']
+
+        return self.get_auth_user(request, backend, token, provider)
+
+    def get_auth_user(self, request, backend, token, provider):
+        # If this request is made with an authenticated user,
+        #  try to associate a social account with it
+        authed_user = request.user if not request.user.is_anonymous else None
+
+        try:
+            # if `authed_user` is None,
+            #   python-social-auth will make a new user,
+            # else
+            #   this social account will be associated with the user parsed
+            user = backend.do_auth(token, user=authed_user)
+        except AuthAlreadyAssociated:
+            return Response({
+                "errors": "That social media account is already in use"
+            }, status=status.HTTP_409_CONFLICT)
+
+        return self.serialize_user(user, provider, token)
+
+    def serialize_user(self, user, provider, token):
+        if user and user.is_active:
+            # if the access token was set to an empty string,
+            # then save the access token from the request
+            serializer = UserSerializer(user)
+            auth_created = user.social_auth.get(provider=provider)
+            if not auth_created.extra_data['access_token']:
+                auth_created.extra_data['access_token'] = token
+                auth_created.save()
+
+            # Set instance since we are not calling `serializer.save()`
+            serializer.instance = user
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED,
+                            headers=headers)
+        else:
+            return Response({"errors": "Error with social authentication"},
+                            status=status.HTTP_400_BAD_REQUEST)
