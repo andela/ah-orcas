@@ -1,49 +1,36 @@
 import os
-
 import jwt
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
-from rest_framework import serializers
-from rest_framework import status, generics
-from rest_framework.generics import RetrieveUpdateAPIView, CreateAPIView
+from rest_framework import generics, serializers, status
+from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from social_core.backends.oauth import BaseOAuth1, BaseOAuth2
-from social_core.exceptions import AuthAlreadyAssociated
-from social_core.exceptions import MissingBackend
+from social_core.exceptions import AuthAlreadyAssociated, MissingBackend
 from social_django.utils import load_strategy, load_backend
-
-from authors.settings import DEFAULT_DOMAIN
-from authors.settings import EMAIL_HOST_USER
-from authors.settings import SECRET_KEY
+from authors.settings import DEFAULT_DOMAIN, EMAIL_HOST_USER, SECRET_KEY
 from .models import User
 from .renderers import UserJSONRenderer
-from .serializers import (
-    LoginSerializer, RegistrationSerializer, UserSerializer,
-    SocialSignUpSerializer)
-from .serializers import (
-    ResetPasswordSerializer,
-    ForgetPasswordSerializer)
+from .serializers import (LoginSerializer,
+                          RegistrationSerializer,
+                          UserSerializer,
+                          ResetPasswordSerializer,
+                          ForgetPasswordSerializer,
+                          SocialSignUpSerializer)
 
 
 class RegistrationAPIView(CreateAPIView):
-    """
-    Register a new user
-    """
-    # Allow any user (authenticated or not) to hit this endpoint.
+    """Register a new user """
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = RegistrationSerializer
 
     def post(self, request, **kwargs):
         user = request.data.get('user', {})
-
-        # The create serializer, validate serializer, save serializer pattern
-        # below is common and you will see it a lot throughout this course and
-        # your own work later on. Get familiar with it.
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -67,58 +54,50 @@ class RegistrationAPIView(CreateAPIView):
 
 
 class LoginAPIView(CreateAPIView):
-    """
-    Login a registered user
-    """
+    """Login a registered user """
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = LoginSerializer
 
     def post(self, request, **kwargs):
         user = request.data.get('user', {})
-
-        # Notice here that we do not call `serializer.save()` like we did for
-        # the registration endpoint. This is because we don't actually have
-        # anything to save. Instead, the `validate` method on our serializer
-        # handles everything we need.
         serializer = self.serializer_class(data=user)
         serializer.is_valid(raise_exception=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class UserRetrieveUpdateAPIView(RetrieveUpdateAPIView):
+class UserUpdateAPIView(UpdateAPIView):
+    """
+    Updates the user profile
+    """
     permission_classes = (IsAuthenticated,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = UserSerializer
 
-    def retrieve(self, request, *args, **kwargs):
-        # There is nothing to validate or save here. Instead, we just want the
-        # serializer to handle turning our `User` object into something that
-        # can be JSONified and sent to the client.
-        serializer = self.serializer_class(request.user)
+    def put(self, request, *args, **kwargs):
+        """User profile update"""
+        user_data = request.data.get('user', {})
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def update(self, request, *args, **kwargs):
-        serializer_data = request.data.get('user', {})
-
-        # Here is that serialize, validate, save pattern we talked about
-        # before.
+        serializer_data = {
+            'username': user_data.get('username', request.user.username),
+            'email': user_data.get('email', request.user.email),
+            'bio': user_data.get('bio', request.user.userprofile.bio),
+            'image': user_data.get('image', request.user.userprofile.image)
+        }
         serializer = self.serializer_class(
             request.user, data=serializer_data, partial=True
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer_data, status=status.HTTP_200_OK)
 
 
 class VerifyAPIView(APIView):
     """
     Verifies a user based on the token sent to their email address.
     """
-
     def get(self, request, token):
         try:
             user = jwt.decode(token, SECRET_KEY)
@@ -135,10 +114,8 @@ class VerifyAPIView(APIView):
                             status=status.HTTP_401_UNAUTHORIZED)
 
 
-class ForgetPassword(CreateAPIView):
-    """
-    send password reset token to email
-    """
+class ForgetPassword(APIView):
+    """send password reset token to email"""
     permission_classes = (AllowAny,)
     renderer_classes = (UserJSONRenderer,)
     serializer_class = ForgetPasswordSerializer
@@ -146,7 +123,7 @@ class ForgetPassword(CreateAPIView):
     def post(self, request):
         """
         this method sends reset token in a link to a registered user
-    """
+        """
         data = request.data.get('user', {})
         serializer = self.serializer_class(data=data)
         serializer.is_valid(raise_exception=True)
@@ -212,8 +189,9 @@ class ResetPassword(APIView):
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             return Response(
                 {"response": 'A user with this email was not found.'})
-        if not default_token_generator.check_token(user, token):
-            return Response({"response": 'Invalid reset tokens'},
+        is_valid = default_token_generator.check_token(user, token)
+        if not is_valid:
+            return Response({"response": 'Token expired'},
                             status=status.HTTP_401_UNAUTHORIZED)
         new_password = request.data.get('user')
         user.set_password(new_password)
@@ -248,13 +226,9 @@ class SocialAuthView(generics.CreateAPIView):
 
     def create_token(self, request, serializer):
         provider = request.data['provider']
-
         # passing `request` to `load_strategy`,
-        # python-social-auth knows to use the Django strategy.
         # `strategy` is a PSA concept for referencing Python frameworks
-        # (e.g. Flask, Django, etc.)
         strategy = load_strategy(request)
-
         # get backend corresponding to our user's social auth provider
         # i.e. Google, Facebook, Twitter
         try:

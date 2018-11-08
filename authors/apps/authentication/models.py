@@ -81,20 +81,10 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     # The `is_staff` flag is expected by Django to determine who can and cannot
     # log into the Django admin site. For most users, this flag will always be
-    # falsed.
+    # false.
     is_staff = models.BooleanField(default=False)
-
     # at signup let the user confirmed status be false
     is_confirmed_email = models.BooleanField(default=False)
-
-    # A timestamp representing when this object was created.
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    # A timestamp reprensenting when this object was last updated.
-    updated_at = models.DateTimeField(auto_now=True)
-
-    # More fields required by Django when specifying a custom user model.
-
     # The `USERNAME_FIELD` property tells us which field we will use to log in.
     # In this case, we want that to be the email field.
     USERNAME_FIELD = 'email'
