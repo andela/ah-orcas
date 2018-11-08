@@ -188,7 +188,7 @@ class TestEmailVerify(APITestCase):
         resp = self.client.put(url, self.password_reset, format='json')
         response = self.client.put(url, self.password_reset, format='json')
         self.assertIn(
-            "Invalid reset tokens", str(
+            "Token expired", str(
                 response.data))
         self.assertIn(
             "password successfully changed", str(

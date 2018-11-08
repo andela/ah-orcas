@@ -15,9 +15,10 @@ install:
 
 script:
   - python3 manage.py makemigrations authentication
-  - python3 manage.py makemigrations articles
   - python3 manage.py migrate authentication
+  - python3 manage.py makemigrations articles
   - python3 manage.py migrate articles
+  - python3 manage.py makemigrations
   - python3 manage.py migrate
   - coverage run manage.py test
   - coverage report

@@ -4,7 +4,7 @@ from . import views
 from .views import (
     ForgetPassword,
     ResetPassword,
-    LoginAPIView, RegistrationAPIView, UserRetrieveUpdateAPIView,
+    LoginAPIView, RegistrationAPIView, UserUpdateAPIView,
     SocialAuthView)
 
 schema_view = get_swagger_view(title="Orcas API Documentation")
@@ -15,15 +15,19 @@ urlpatterns = [
         schema_view,
         name="main-view"),
     path(
-        'user/<int:pk>',
-        UserRetrieveUpdateAPIView.as_view()),
-    path(
         'users/',
         RegistrationAPIView.as_view(),
         name='register'),
     path(
         'users/login/',
         LoginAPIView.as_view(), name="login"),
+    path(
+        'user/',
+        UserUpdateAPIView.as_view(),
+        name='update_profile'),
+    path(
+        'users/login/',
+        LoginAPIView.as_view(), name='login'),
     path(
         'users/verify/<str:token>',
         views.VerifyAPIView.as_view(),
