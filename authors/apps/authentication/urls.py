@@ -1,6 +1,5 @@
 from django.urls import path
 from rest_framework_swagger.views import get_swagger_view
-
 from . import views
 from .views import (
     ForgetPassword,
@@ -24,7 +23,7 @@ urlpatterns = [
         name='register'),
     path(
         'users/login/',
-        LoginAPIView.as_view()),
+        LoginAPIView.as_view(), name="login"),
     path(
         'users/verify/<str:token>',
         views.VerifyAPIView.as_view(),

@@ -193,6 +193,7 @@ class TestEmailVerify(APITestCase):
         self.assertIn(
             "password successfully changed", str(
                 resp.data))
+
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_password_reset_get(self):
