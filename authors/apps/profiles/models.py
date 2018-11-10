@@ -13,5 +13,8 @@ class UserProfile(TimestampedModel):
     bio = models.TextField(blank=True)
     image = models.URLField(blank=True)
 
+    class Meta:
+        app_label = "profiles"
+
     def __str__(self):
         return self.user.username
