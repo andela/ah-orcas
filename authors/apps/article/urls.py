@@ -9,6 +9,10 @@ from .views import (
     Rate,
     ArticleRate
 )
+from .likes_dislike_views import (
+    Like,
+    Dislike
+)
 
 schema_view = get_swagger_view(title="Articles")
 
@@ -41,4 +45,13 @@ urlpatterns = [
         'article/rate/<str:pk>/',
         ArticleRate.as_view(),
         name="view_rate"),
+    path(
+        "article/like/<str:slug>/",
+        Like.as_view(),
+        name='like_article'),
+    path(
+        "article/dislike/<str:slug>/",
+        Dislike.as_view(),
+        name='dislike_article'),
+
 ]

@@ -102,3 +102,32 @@ class RateArticle(models.Model):
         Return a human readable format
         """
         return self.rate
+
+
+class LikeDislikeArticle(models.Model):
+    """
+    This model holds likes of an article in a boolean format.
+    """
+    liker = models.ForeignKey(
+        "authentication.User",
+        related_name="likearticle",
+        on_delete=models.CASCADE
+    )
+    article = models.ForeignKey(
+        "article.Article",
+        related_name="likearticle",
+        on_delete=models.CASCADE)
+    is_liked = models.BooleanField(
+        default=False,
+        null=False,
+        blank=False
+    )
+    is_disliked = models.BooleanField(
+        default=False,
+        null=False,
+        blank=False
+    )
+
+    def __str__(self):
+        "return human readable format"
+        return self.is_liked

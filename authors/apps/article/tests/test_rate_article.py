@@ -1,85 +1,11 @@
-from django.urls import reverse
+from .base_like_test import BaseLikeTest
 import os
-from ...authentication.models import User
-from ..models import Article
-from rest_framework.test import APIClient
-from rest_framework.test import APITestCase
 from rest_framework import status
 
 
-class TestRateArticle(APITestCase):
+class TestRateArticle(BaseLikeTest):
     """ class for testing email verification"""
 
-    def setUp(self):
-        """
-        Prepare test environment for each testcase
-        """
-
-        self.article = {
-            "title": "How to train your dragon today",
-            "description": "Ever wonder how?",
-            "body": "You have to believe in you",
-            "image": "https://dummyimage.com/600x400/000/fff"
-        }
-
-        self.client = APIClient()
-        self.article = Article()
-        self.signup_url = reverse('authentication:register')
-        self.user_details = {
-            'user': {
-                'username': 'user1',
-                'email': 'evajohnson714@gmail.com',
-                'password': 'somepass12345',
-            }
-        }
-        self.user_details_2 = {
-            'user': {
-                'username': 'user2',
-                'email': 'evajohnson715s@gmail.com',
-                'password': 'somepass12345',
-            }
-        }
-        resp = self.client.post(
-            self.signup_url,
-            self.user_details,
-            format='json')
-        res = self.client.post(
-            self.signup_url,
-            self.user_details_2,
-            format='json')
-        self.token_2 = res.data['token']
-        self.token = resp.data['token']
-        self.email = "test_user@gmail.com"
-        self.name = "test"
-        self.user = User(username=self.name, email=self.email)
-        self.user.set_password("@Winners11")
-        self.user.save()
-        self.user_id = User.objects.get(email=self.email).pk
-        self.slug = "this-is-a-question"
-        title = "this is a question"
-        description = "this is a description"
-        body = "this is a body"
-        author = self.user
-        article = Article(
-            user=author,
-            slug=self.slug,
-            body=body,
-            title=title,
-            description=description
-        )
-        article.save()
-        self.rate_details = {
-            "user": {
-                "slug": self.slug,
-                "rate": 3
-            }
-        }
-        self.rate_url = os.environ["URL"] + \
-            "api/article/" + self.slug + "/rate/"
-        self.view_rates_url = os.environ["URL"] + "api/article/rate/"
-
-        self.articles_url = os.environ["URL"] + "api/article/"
-        self.create_articles_url = os.environ["URL"] + "api/article/create"
 
     def test_rate_article_without_token(self):
         """
