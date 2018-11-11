@@ -25,6 +25,7 @@ urlpatterns = [
         include(
             ('authors.apps.authentication.urls',
              'authentication'),
+
             namespace='authentication',)),
     path('api/',
          include(
@@ -33,6 +34,6 @@ urlpatterns = [
              namespace='profile')),
     path('api/',
          include(
-                 ('authors.apps.articles.urls',
-                  'articles'),
-                 namespace='articles'))]
+                 ('authors.apps.article.urls',
+                  'article'),
+                 namespace='article'))]

@@ -33,7 +33,9 @@ class ProfileRetrieveAPIView(RetrieveAPIView):
                 },
                 status=status.HTTP_404_NOT_FOUND
             )
-        serializer = self.serializer_class(profile)
+        serializer = self.serializer_class(profile, context={
+            'request': request
+        })
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -75,7 +77,7 @@ class ProfileListAPIView(ListAPIView):
         """
         try:
             queryset = UserProfile.objects.all()
-        except Exception:
+        except UserProfile.DoesNotExist:
             return Response(
                 {
                     'Message': 'There are no profiles found'
@@ -86,3 +88,44 @@ class ProfileListAPIView(ListAPIView):
         profiles = Response({'profiles': serializer.data},
                             status=status.HTTP_200_OK)
         return profiles
+
+
+class ProfileFollowAPIView(APIView):
+    permission_classes = (IsAuthenticated,)
+    renderer_classes = (ProfileJSONRenderer,)
+    serializer_class = ProfileSerializer
+
+    def follow_unfollow(self, username, request, check, status_):
+        follower = self.request.user.userprofile
+        try:
+            followee = UserProfile.objects.get(user__username=username)
+        except UserProfile.DoesNotExist:
+            return Response(
+                {'Message': 'No profile with this username was found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if follower.pk is followee.pk:
+            return Response({
+                'Message': 'You can only follow others, not yourself'
+            }, status=status.HTTP_409_CONFLICT)
+
+        if check:
+            follower.follow(followee)
+        if not check:
+            follower.unfollow(followee)
+
+        serializer = self.serializer_class(followee, context={
+            'request': request
+        })
+        return Response(serializer.data, status=status_)
+
+    def post(self, request, username=None):
+        """follow a profile with username 'username'"""
+        return self.follow_unfollow(
+            username, request, True, status.HTTP_201_CREATED)
+
+    def delete(self, request, username=None):
+        """un-follow a profile """
+        return self.follow_unfollow(
+            username, request, False, status.HTTP_200_OK)

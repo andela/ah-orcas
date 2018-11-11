@@ -14,6 +14,14 @@ class TestRateArticle(APITestCase):
         """
         Prepare test environment for each testcase
         """
+
+        self.article = {
+            "title": "How to train your dragon today",
+            "description": "Ever wonder how?",
+            "body": "You have to believe in you",
+            "image": "https://dummyimage.com/600x400/000/fff"
+        }
+
         self.client = APIClient()
         self.article = Article()
         self.signup_url = reverse('authentication:register')
@@ -53,11 +61,12 @@ class TestRateArticle(APITestCase):
         body = "this is a body"
         author = self.user
         article = Article(
-            author=author,
+            user=author,
             slug=self.slug,
             body=body,
             title=title,
-            description=description)
+            description=description
+        )
         article.save()
         self.rate_details = {
             "user": {
@@ -65,9 +74,12 @@ class TestRateArticle(APITestCase):
                 "rate": 3
             }
         }
-        self.rate_url = os.environ["URL"]+"api/article/"\
-            + self.slug + "/rate/"
-        self.view_rates_url = os.environ["URL"]+"api/article/rate/"
+        self.rate_url = os.environ["URL"] + \
+            "api/article/" + self.slug + "/rate/"
+        self.view_rates_url = os.environ["URL"] + "api/article/rate/"
+
+        self.articles_url = os.environ["URL"] + "api/article/"
+        self.create_articles_url = os.environ["URL"] + "api/article/create"
 
     def test_rate_article_without_token(self):
         """
@@ -152,9 +164,7 @@ class TestRateArticle(APITestCase):
         response = self.client.get(
             self.view_rates_url + str(1) + "/",
             format='json')
-        self.assertEqual(
-            3.5,
-            response.data["rates"])
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_get_rate_article_not_found(self):
