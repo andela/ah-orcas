@@ -39,7 +39,7 @@ class TestArticles(TestCase):
         self.client.force_authenticate(user=self.user)
         self.client.credentials(
             HTTP_AUTHORIZATION='Bearer ' +
-            self.user.token())
+                               self.user.token())
 
         self.namespace = 'article'
         self.body = {
@@ -61,6 +61,7 @@ class TestArticles(TestCase):
             self.namespace + ':detail',
             kwargs={
                 'slug': self.article.slug})
+
 
     def test_create_article_api(self):
         response = self.client.post(self.create_url, self.body, format='json')
@@ -98,3 +99,32 @@ class TestArticles(TestCase):
 
         response = self.client.delete(self.delete_url)
         self.assertEqual(204, response.status_code)
+
+    def create_many_articles(self):
+        for i in range(1, 15):
+            ''' next line will make the tilte unique and ensures its posted'''
+            self.body['title'] = self.body['title'] + str(i)
+            self.client.post(self.create_url, self.body, format='json')
+
+    def test_articles_are_paginated(self):
+        self.create_many_articles()
+        response = self.client.get(self.list_url)
+        '''See if  the return of get articles has count, next and previous
+           articles'''
+        self.assertIn("next", response.data)
+        self.assertIn("previous", response.data)
+        self.assertIn("count", response.data)
+
+    def test_more_than_ten_articles_are_paginated(self):
+        self.create_many_articles()
+        response = self.client.get(self.list_url)
+        self.assertEqual('http://testserver/api/article/?page=2',
+                         response.data["next"])
+        self.assertEqual(response.data["previous"], None)
+        self.assertEqual(response.data["count"], 15)
+
+    def test_number_of_articles_in_page(self):
+        """This one tests that a given page returns tens articles"""
+        self.create_many_articles()
+        response = self.client.get(self.list_url)
+        assert len(response.data["results"]) == 10

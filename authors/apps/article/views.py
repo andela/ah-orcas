@@ -4,10 +4,13 @@ from .serializers import (
     ArticleCreateSerializer,
     RateArticleSerializer
 )
+
 from ..core.permissions import IsOwnerOrReadOnly
 from ..authentication.renderers import UserJSONRenderer
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
+from authors import settings
 from django.db.models import Q
 from rest_framework.generics import (
     ListAPIView, CreateAPIView,
@@ -23,15 +26,20 @@ from .models import RateArticle, Article
 LOOKUP_FIELD = 'slug'
 
 
+class StandardPagination(PageNumberPagination):
+    page_size = settings.PAGE_SIZE
+    page_size_query_param = 'page_size'
+
+
+
 class ArticleListAPIView(ListAPIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = ArticleSerializer
+    pagination_class = StandardPagination
 
     def get_queryset(self, *args, **kwargs):
         queryset_list = TABLE.objects.all()
-
         query = self.request.GET.get('q')
-
         if query:
             queryset_list = queryset_list.filter(
                 Q(title__icontains=query) |
