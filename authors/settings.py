@@ -148,6 +148,10 @@ EMAIL_HOST_PASSWORD = os.environ['EMAIL_HOST_PASSWORD']
 EMAIL_PORT = os.environ['EMAIL_PORT']
 EMAIL_USE_TLS = True
 DEFAULT_DOMAIN = os.getenv('DEFAULT_DOMAIN')
+# article pagination credentials
+PAGE_SIZE = os.environ["PAGE_SIZE"]
+
+
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
@@ -203,7 +207,8 @@ REST_FRAMEWORK = {
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'authors.apps.authentication.backends.JWTAuthentication',
-    )
+    ),
+
 }
 
 SWAGGER_SETTINGS = {
