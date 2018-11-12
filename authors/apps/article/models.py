@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.translation import pgettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.core.validators import MaxValueValidator, MinValueValidator
+from rest_framework.reverse import reverse as api_reverse
 
 '''Django-autoslug is a reusable Django library
 that provides an improved slug field which can automatically:
@@ -77,6 +78,10 @@ class Article(models.Model):
 
     def __str__(self):
         return self.title
+
+    def api_url(self, request=None):
+        return api_reverse("article:detail",
+                           kwargs={'slug': self.slug}, request=request)
 
 
 class RateArticle(models.Model):

@@ -1,3 +1,4 @@
+import json
 from django.apps import apps
 from django.test import TestCase
 from django.urls import reverse
@@ -61,7 +62,6 @@ class TestArticles(TestCase):
             self.namespace + ':detail',
             kwargs={
                 'slug': self.article.slug})
-
 
     def test_create_article_api(self):
         response = self.client.post(self.create_url, self.body, format='json')
@@ -128,3 +128,28 @@ class TestArticles(TestCase):
         self.create_many_articles()
         response = self.client.get(self.list_url)
         assert len(response.data["results"]) == 10
+
+    def test_if_article_returns_facebook_url(self):
+        """This method tests whether the API returns facebook url"""
+        response = self.client.get(self.list_url)
+        self.assertIn("facebook", json.dumps(response.data))
+
+    def test_if_article_returns_linkedin_url(self):
+        """This method tests whether the API returns linkedin url"""
+        response = self.client.get(self.list_url)
+        self.assertIn("Linkedin", json.dumps(response.data))
+
+    def test_if_article_returns_twitter_url(self):
+        """This method tests whether the API returns twitter url"""
+        response = self.client.get(self.list_url)
+        self.assertIn("twitter", json.dumps(response.data))
+
+    def test_if_article_returns_mail_url(self):
+        """This method tests whether the API returns mail url"""
+        response = self.client.get(self.list_url)
+        self.assertIn("mail", json.dumps(response.data))
+
+    def test_article_returns_url(self):
+        """This method tests whether the API returns url"""
+        response = self.client.get(self.list_url)
+        self.assertIn("url", json.dumps(response.data))
