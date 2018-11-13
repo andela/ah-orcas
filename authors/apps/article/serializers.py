@@ -18,16 +18,60 @@ fields = ('id', 'slug', 'image', 'title', 'description', 'body', 'user',)
 
 
 class ArticleSerializer(serializers.ModelSerializer):
+    # add the return fields
+    url = serializers.SerializerMethodField(read_only=True)
+    facebook = serializers.SerializerMethodField(read_only=True)
+    Linkedin = serializers.SerializerMethodField(read_only=True)
+    twitter = serializers.SerializerMethodField(read_only=True)
+    mail = serializers.SerializerMethodField(read_only=True)
+
     update_url = serializers.HyperlinkedIdentityField(
         view_name=NAMESPACE + ':update', lookup_field='slug')
     delete_url = serializers.HyperlinkedIdentityField(
         view_name=NAMESPACE + ':delete', lookup_field='slug')
     author = serializers.SerializerMethodField(read_only=True)
 
+    def get_url(self, obj):
+        request = self.context.get("request")
+        return obj.api_url(request=request)
+
+    def link_get(self, obj, link, args=None):
+        """get url and append the link to url that you want to share"""
+        request = self.context.get("request")
+        if args is None:
+            return link + obj.api_url(request=request)
+        if args:
+            return link + obj.api_url(request=request) + args
+
+    def get_facebook(self, obj):
+        """append facebook link."""
+        link = 'https://www.facebook.com/sharer.php?u='
+        return self.link_get(obj, link)
+
+    def get_Linkedin(self, obj):
+        """append linkedin link"""
+        link = 'https://www.linkedin.com/shareArticle?mini=true&amp;url='
+        return self.link_get(obj, link)
+
+    def get_twitter(self, obj):
+        """append twitter link"""
+        link = 'https://twitter.com/share?url='
+        args = '&amp;text=Amazing Read'
+        return self.link_get(obj, link, args=args)
+
+    def get_mail(self, obj):
+        request = self.context.get("request")
+        return 'mailto:?subject=New Article Alert&body={}'.format(
+            obj.api_url(request=request))
+
     class Meta:
         model = TABLE
 
-        fields = fields + ('author', 'update_url', 'delete_url')
+        fields = fields + ('author', 'update_url', 'delete_url', 'facebook',
+                           'Linkedin',
+                           'twitter',
+                           'mail',
+                           'url')
 
     def get_author(self, obj):
         try:

@@ -64,6 +64,9 @@ class ArticleDetailAPIView(RetrieveAPIView):
     serializer_class = ArticleSerializer
     lookup_field = LOOKUP_FIELD
 
+    def get_serializer_context(self, *args, **kwargs):
+        return {"request": self.request}
+
 
 class ArticleDeleteAPIView(DestroyAPIView):
     queryset = TABLE.objects.all()
