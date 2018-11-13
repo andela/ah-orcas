@@ -51,9 +51,11 @@ INSTALLED_APPS = [
     'authors.apps.authentication',
     'authors.apps.core',
     'authors.apps.profiles',
+    "authors.apps.report",
 
     'social_django',
-    "authors.apps.article"
+    "authors.apps.article",
+
 
 ]
 

@@ -36,4 +36,9 @@ urlpatterns = [
          include(
                  ('authors.apps.article.urls',
                   'article'),
-                 namespace='article'))]
+                 namespace='article')),
+    path('api/',
+         include(
+                 ('authors.apps.report.urls',
+                  'report'),
+                 namespace='report'))]
