@@ -4,7 +4,7 @@ from .serializers import (
     ArticleCreateSerializer,
     RateArticleSerializer
 )
-
+from rest_framework.views import APIView
 from ..core.permissions import IsOwnerOrReadOnly
 from ..authentication.renderers import UserJSONRenderer
 from rest_framework.response import Response
@@ -21,7 +21,8 @@ from rest_framework.generics import (
 from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly, IsAuthenticated
 )
-from .models import RateArticle, Article
+from .models import (RateArticle,
+                     Article)
 
 LOOKUP_FIELD = 'slug'
 
@@ -29,7 +30,6 @@ LOOKUP_FIELD = 'slug'
 class StandardPagination(PageNumberPagination):
     page_size = settings.PAGE_SIZE
     page_size_query_param = 'page_size'
-
 
 
 class ArticleListAPIView(ListAPIView):
@@ -82,11 +82,11 @@ class ArticleUpdateAPIView(RetrieveUpdateAPIView):
         serializer.save(user=self.request.user)
 
 
-class ArticleRate(CreateAPIView):
+class ArticleRate(APIView):
     """
     rate class article
     """
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     renderer_classes = (UserJSONRenderer,)
 
     def get(self, request, **kwargs):
@@ -142,8 +142,7 @@ class Rate(CreateAPIView):
             return Response({"response": "sucessfully rated"},
                             status=status.HTTP_200_OK)
         except Exception:
-            rate_article = RateArticle(
-                rater=rater, article=article, rate=data["rate"])
-            rate_article.save()
+            RateArticle(
+                rater=rater, article=article, rate=data["rate"]).save()
             return Response(data={"response": "sucessfully rated"},
                             status=status.HTTP_200_OK)
