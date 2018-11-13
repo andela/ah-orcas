@@ -1,10 +1,10 @@
 # this is how the db will be structured.
-
-from django.db import models
-from django.utils.translation import pgettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import ArrayField
 from django.core.validators import MaxValueValidator, MinValueValidator
 from rest_framework.reverse import reverse as api_reverse
+from django.db import models
+from django.utils.translation import pgettext_lazy as _
 
 '''Django-autoslug is a reusable Django library
 that provides an improved slug field which can automatically:
@@ -71,6 +71,12 @@ class Article(models.Model):
     updated_at = models.DateTimeField(
         _('Article field', 'updated at'),
         auto_now=True
+    )
+
+    tags = ArrayField(
+        models.CharField(max_length=10, blank=True),
+        blank=True,
+        null=True
     )
 
     class Meta:

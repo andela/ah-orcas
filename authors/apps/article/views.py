@@ -19,10 +19,10 @@ from rest_framework.generics import (
     DestroyAPIView,
 )
 from rest_framework.permissions import (
-    IsAuthenticatedOrReadOnly, IsAuthenticated
-)
-from .models import (RateArticle,
-                     Article)
+    IsAuthenticatedOrReadOnly, IsAuthenticated,
+    AllowAny)
+
+from .models import RateArticle, Article
 
 LOOKUP_FIELD = 'slug'
 
@@ -33,21 +33,28 @@ class StandardPagination(PageNumberPagination):
 
 
 class ArticleListAPIView(ListAPIView):
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = (AllowAny,)
     serializer_class = ArticleSerializer
     pagination_class = StandardPagination
 
-    def get_queryset(self, *args, **kwargs):
-        queryset_list = TABLE.objects.all()
-        query = self.request.GET.get('q')
-        if query:
-            queryset_list = queryset_list.filter(
-                Q(title__icontains=query) |
-                Q(slug__icontains=query) |
-                Q(description__icontains=query)
+    def get_queryset(self):
+        queryset = Article.objects.all()
+        username = self.request.query_params.get('author', None)
+        if username is not None:
+            queryset = queryset.filter(user__username__iexact=username)
+        tags = self.request.query_params.get('tags', None)
+        if tags is not None:
+            tags = tags.split(',')
+            queryset = queryset.filter(tags__overlap=tags)
+        search = self.request.query_params.get('search', None)
+        if search is not None:
+            queryset = queryset.filter(
+                Q(title__icontains=search) |
+                Q(slug__icontains=search) |
+                Q(description__icontains=search) |
+                Q(body__contains=search)
             )
-
-        return queryset_list.order_by('-id')
+        return queryset
 
 
 class ArticleCreateAPIView(CreateAPIView):
