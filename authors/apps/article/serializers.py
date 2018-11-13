@@ -9,12 +9,20 @@ from django.apps import apps
 from .models import RateArticle
 from authors.apps.profiles.serializers import ProfileListSerializer
 
-
 TABLE = apps.get_model('article', 'Article')
 Profile = apps.get_model('profiles', 'UserProfile')
 
 NAMESPACE = 'article'
-fields = ('id', 'slug', 'image', 'title', 'description', 'body', 'user',)
+fields = (
+    'id',
+    'slug',
+    'image',
+    'title',
+    'description',
+    'body',
+    'user',
+    'tags',
+)
 
 
 class ArticleSerializer(serializers.ModelSerializer):
