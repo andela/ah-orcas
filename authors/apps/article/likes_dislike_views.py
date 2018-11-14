@@ -1,9 +1,14 @@
+from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+
+from authors.apps.article.renderers import FavoriteJSONRenderer
+from authors.apps.article.serializers import FavoriteSerializer,\
+    ArticleSerializer
 from .models import (Article,
-                     LikeDislikeArticle)
+                     LikeDislikeArticle, Favorite)
 
 
 LOOKUP_FIELD = 'slug'
@@ -144,3 +149,53 @@ class Dislike(APIView):
             return Response(
                 {"response": "article successfully disliked"},
                 status=status.HTTP_200_OK)
+
+
+class FavoriteAPIView(APIView):
+    serializer_class = FavoriteSerializer
+    permission_classes = (IsAuthenticated,)
+    queryset = Favorite.objects.all()
+    renderer_classes = (FavoriteJSONRenderer,)
+
+    def post(self, request, slug):
+        """favotite article view class"""
+        try:
+            article = Article.objects.get(slug=slug)
+        except Article.DoesNotExist:
+            return Response({"Message": [
+                "That article does not exist"
+            ]}, status.HTTP_204_NO_CONTENT)
+        favorite = dict()
+        favorite["user"] = request.user.id
+        favorite["article"] = article.pk
+        serializer = self.serializer_class(data=favorite)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        article_serializer = ArticleSerializer(
+            instance=article, context={'request': request})
+        data = dict(article=article_serializer.data)
+        data["article"]["favorited"] = True
+        data["message"] = "favorited"
+        return Response(data, status.HTTP_200_OK)
+
+    def delete(self, request, slug):
+        """unfavorite an article"""
+        try:
+            article = Article.objects.get(slug=slug)
+        except Article.DoesNotExist:
+            raise NotFound({"error": [
+                "That article does not exist"
+            ]})
+        try:
+            favorite = Favorite.objects.get(
+                user=request.user.id, article=article.pk)
+        except Favorite.DoesNotExist:
+            return Response(
+                {"Message": "You have not favorited this article yet"},
+                status.HTTP_409_CONFLICT)
+        favorite.delete()
+        article_serializer = ArticleSerializer(
+            instance=article, context={'request': request})
+        data = dict(article=article_serializer.data)
+        data["message"] = "unfavorited"
+        return Response(data, status.HTTP_200_OK)

@@ -1,4 +1,6 @@
 import json
+from rest_framework.renderers import JSONRenderer
+from rest_framework import status
 
 from authors.apps.core.renderers import AuthorsJSONRenderer
 
@@ -24,3 +26,12 @@ class CommentsRenderer(AuthorsJSONRenderer):
 class CommentsThreadsRenderer(AuthorsJSONRenderer):
     charset = 'utf-8'
     object_name = 'threads'
+
+
+class FavoriteJSONRenderer(JSONRenderer):
+    def render(self, data, media_type=None, renderer_context=None):
+        if renderer_context:
+            status_code = renderer_context.get('response').status_code
+            if not status_code == status.HTTP_200_OK:
+                return super(FavoriteJSONRenderer, self).render(data)
+        return super(FavoriteJSONRenderer, self).render(data)

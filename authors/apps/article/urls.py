@@ -12,7 +12,8 @@ from .views import (
     CommentsUpdateDeleteAPIView)
 from .likes_dislike_views import (
     Like,
-    Dislike
+    Dislike,
+    FavoriteAPIView
 )
 
 schema_view = get_swagger_view(title="Articles")
@@ -60,4 +61,7 @@ urlpatterns = [
     path('articles/<slug:slug>/comments/<int:comment_id>',
          CommentsUpdateDeleteAPIView.as_view(),
          name='delete_comment'),
+    path('articles/<slug>/favorite/',
+         FavoriteAPIView.as_view(),
+         name="favorite"),
 ]
