@@ -7,8 +7,9 @@ from .views import (
     ArticleDetailAPIView,
     ArticleUpdateAPIView,
     Rate,
-    ArticleRate
-)
+    ArticleRate,
+    CommentsListCreateView,
+    CommentsUpdateDeleteAPIView)
 from .likes_dislike_views import (
     Like,
     Dislike
@@ -53,5 +54,10 @@ urlpatterns = [
         "article/dislike/<str:slug>/",
         Dislike.as_view(),
         name='dislike_article'),
-
+    path('articles/<slug:slug>/comments',
+         CommentsListCreateView.as_view(),
+         name='comment_on_an_article'),
+    path('articles/<slug:slug>/comments/<int:comment_id>',
+         CommentsUpdateDeleteAPIView.as_view(),
+         name='delete_comment'),
 ]

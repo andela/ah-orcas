@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-python manage.py makemigrations authentication
-python manage.py migrate authentication
-python managy.py makemigrations article
-python manage.py migrate article
-python manage.py makemigrations profiles
-python manage.py migrate profiles
-python manage.py makemigrations
-python manage.py migrate
+python3 manage.py makemigrations authentication
+python3 manage.py migrate authentication
+python3 manage.py makemigrations profiles
+python3 manage.py migrate profiles
+python3 manage.py makemigrations article
+python3 manage.py migrate article
+python3 manage.py makemigrations report
+python3 manage.py migrate report
+python3 manage.py makemigrations
+python3 manage.py migrate

@@ -6,6 +6,9 @@ from rest_framework.reverse import reverse as api_reverse
 from django.db import models
 from django.utils.translation import pgettext_lazy as _
 
+from authors.apps.authentication.models import User
+from authors.apps.core.models import TimestampedModel
+
 '''Django-autoslug is a reusable Django library
 that provides an improved slug field which can automatically:
 populate itself from another field and preserve
@@ -142,3 +145,30 @@ class LikeDislikeArticle(models.Model):
     def __str__(self):
         "return human readable format"
         return self.is_liked
+
+
+class Comments(TimestampedModel):
+    """
+    This class handles the comments of a single article
+    """
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=False,
+        on_delete=models.CASCADE,
+        related_name='thread')
+    body = models.TextField(max_length=200)
+    author = models.ForeignKey(
+        User,
+        related_name='comments',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True)
+    article = models.ForeignKey(
+        Article,
+        related_name='comments',
+        on_delete=models.CASCADE,
+        null=True)
+
+    def __str__(self):
+        return self.body

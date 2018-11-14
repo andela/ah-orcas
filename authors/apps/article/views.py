@@ -1,14 +1,21 @@
+from django.http import Http404
+from rest_framework.permissions import AllowAny,\
+    IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.views import APIView
+
+from authors.apps.article.models import Article, RateArticle, \
+    Comments
+from authors.apps.article.renderers import CommentsRenderer
 from .serializers import (
     TABLE,
     ArticleSerializer,
     ArticleCreateSerializer,
-    RateArticleSerializer
-)
-from rest_framework.views import APIView
+    RateArticleSerializer,
+    CommentsSerializer)
 from ..core.permissions import IsOwnerOrReadOnly
 from ..authentication.renderers import UserJSONRenderer
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics, permissions, serializers
 from rest_framework.pagination import PageNumberPagination
 from authors import settings
 from django.db.models import Q
@@ -17,12 +24,7 @@ from rest_framework.generics import (
     RetrieveUpdateAPIView,
     RetrieveAPIView,
     DestroyAPIView,
-)
-from rest_framework.permissions import (
-    IsAuthenticatedOrReadOnly, IsAuthenticated,
-    AllowAny)
-
-from .models import RateArticle, Article
+    get_object_or_404, RetrieveUpdateDestroyAPIView)
 
 LOOKUP_FIELD = 'slug'
 
@@ -83,7 +85,8 @@ class ArticleDeleteAPIView(DestroyAPIView):
 
 
 class ArticleUpdateAPIView(RetrieveUpdateAPIView):
-    permission_classes = [IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+    permission_classes = [IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly]
     queryset = TABLE.objects.all()
     serializer_class = ArticleSerializer
     lookup_field = LOOKUP_FIELD
@@ -156,3 +159,80 @@ class Rate(CreateAPIView):
                 rater=rater, article=article, rate=data["rate"]).save()
             return Response(data={"response": "sucessfully rated"},
                             status=status.HTTP_200_OK)
+
+
+class CommentsListCreateView(generics.ListCreateAPIView):
+    """
+   This class handles the endpoints for creating and listing comments
+    """
+    queryset = Comments.objects.all()
+
+    serializer_class = CommentsSerializer
+    renderer_classes = (CommentsRenderer,)
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    def create(self, request, slug=None, *args, **kwargs):
+        serializer_context = {
+            'request': request,
+            'author': request.user,
+            'article': get_object_or_404(Article, slug=self.kwargs["slug"])
+        }
+        data = request.data.get('comments', {})
+        serializer = self.serializer_class(
+            data=data, context=serializer_context)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def list(self, request, *args, slug=None, **kwargs):
+        article = get_object_or_404(Article, slug=self.kwargs["slug"])
+        comment = Comments.objects.filter(article__id=article.id)
+        serializer = self.serializer_class(comment, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CommentsUpdateDeleteAPIView(RetrieveUpdateDestroyAPIView, CreateAPIView):
+    query = Article.objects.all()
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    serializer_class = CommentsSerializer
+
+    def get_object(self):
+        article = get_object_or_404(Article, slug=self.kwargs["slug"])
+        comments = Comments.objects.filter(article__id=article.id)
+        if not comments:
+            raise Http404
+        for comment in comments:
+            new_comment = get_object_or_404(
+                Comments, pk=self.kwargs["comment_id"])
+            if comment.id == new_comment.id:
+                return comment
+
+    def create(self, request, slug=None, pk=None, **kwargs):
+        """
+        Handles the creation of replies
+        """
+        data = request.data
+        context = {'request': request}
+        comment = self.get_object()
+        context['parent'] = Comments.objects.get(pk=comment.id)
+        if context['parent']:
+            serializer = self.serializer_class(data=data, context=context)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(author=self.request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({"Message": "Comment requested was not found"})
+
+    def delete(self, request, slug=None, pk=None, **kwargs):
+        """This function will delete a specific comment"""
+        article = get_object_or_404(Article, slug=self.kwargs["slug"])
+        comment = Comments.objects.filter(pk=article.id)
+        if comment is None:
+            resp = Response({"message": " The Comment does Not Exist"},
+                            status=status.HTTP_404_NOT_FOUND)
+            return resp
+        comment.delete()
+        return Response(
+            {"message": {"Comment deleted successfully"}}, status.HTTP_200_OK)

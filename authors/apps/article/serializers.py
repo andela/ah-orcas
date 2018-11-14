@@ -6,7 +6,9 @@ be easily rendered into JSON, XML or other content types.'''
 
 from rest_framework import serializers
 from django.apps import apps
-from .models import RateArticle
+
+from authors.apps.profiles.models import UserProfile
+from .models import RateArticle, Comments
 from authors.apps.profiles.serializers import ProfileListSerializer
 
 TABLE = apps.get_model('article', 'Article')
@@ -134,3 +136,52 @@ class RateArticleSerializer(serializers.ModelSerializer):
     class Meta:
         model = RateArticle
         fields = ("slug", "rate")
+
+
+class ThreadSerializer(serializers.ModelSerializer):
+    def to_representation(self, value):
+        comment_details = self.parent.parent.__class__(
+            value, context=self.context)
+        return comment_details.data
+
+    class Meta:
+        model = Comments
+        fields = '__all__'
+
+
+class CommentsSerializer(serializers.ModelSerializer):
+    """
+    Serializer class for comments
+    """
+    author = serializers.SerializerMethodField(read_only=True)
+    thread = ThreadSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Comments
+        fields = ('id', 'body', 'author',
+                  'created_at', 'updated_at', 'thread')
+
+    def get_author(self, obj):
+        try:
+            profile = UserProfile.objects.get(user=obj.author)
+            serializer = ProfileListSerializer(instance=profile)
+            return serializer.data
+        except Exception:
+            return {}
+
+    def create(self, validated_data):
+        if self.context.get('parent'):
+            parent = self.context.get('parent', None)
+            instance = Comments.objects.create(parent=parent, **validated_data)
+        else:
+            instance = Comments()
+            instance.author = self.context['request'].user
+            instance.article = self.context['article']
+            instance.body = validated_data.get('body')
+            instance.save()
+        return instance
+
+    def update(self, instance, validated_data):
+        instance.body = validated_data.get('body', instance.body)
+        instance.save()
+        return instance
