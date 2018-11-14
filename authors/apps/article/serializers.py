@@ -10,7 +10,8 @@ from django.apps import apps
 from rest_framework.validators import UniqueTogetherValidator
 
 from authors.apps.profiles.models import UserProfile
-from .models import RateArticle, Comments, Favorite
+
+from .models import RateArticle, Comments, CommentHistory, Favorite
 from authors.apps.profiles.serializers import ProfileListSerializer
 
 TABLE = apps.get_model('article', 'Article')
@@ -214,6 +215,10 @@ class CommentsSerializer(serializers.ModelSerializer):
         return instance
 
     def update(self, instance, validated_data):
+        obj = Comments.objects.only('id').get(id=instance.id)
+        updated_comment = CommentHistory.objects.create(comment=instance.body,
+                                                        original_comment=obj)
+        updated_comment.save()
         instance.body = validated_data.get('body', instance.body)
         instance.save()
         return instance
@@ -231,3 +236,10 @@ class FavoriteSerializer(serializers.ModelSerializer):
                 message="Article already favorited"
             )
         ]
+
+
+class CommentHistorySerializer(serializers.ModelSerializer):
+    """comment history serializer"""
+    class Meta:
+        model = CommentHistory
+        fields = ('id', 'comment', 'date_created', 'original_comment')
