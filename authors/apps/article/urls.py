@@ -9,7 +9,8 @@ from .views import (
     Rate,
     ArticleRate,
     CommentsListCreateView,
-    CommentsUpdateDeleteAPIView)
+    CommentsUpdateDeleteAPIView,
+    ArticleTags)
 from .likes_dislike_views import (
     Like,
     Dislike,
@@ -64,4 +65,8 @@ urlpatterns = [
     path('articles/<slug>/favorite/',
          FavoriteAPIView.as_view(),
          name="favorite"),
+    path(
+        "article/tag/<str:slug>",
+        ArticleTags.as_view(),
+        name='tag_article'),
 ]

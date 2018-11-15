@@ -1,5 +1,5 @@
 from django.http import Http404
-from rest_framework.permissions import AllowAny,\
+from rest_framework.permissions import AllowAny, \
     IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.views import APIView
 
@@ -152,7 +152,7 @@ class Rate(CreateAPIView):
                 rater=rater, article=article)
             rate_article.rate = data["rate"]
             rate_article.save()
-            return Response({"response": "sucessfully rated"},
+            return Response({"response": "successfully rated"},
                             status=status.HTTP_200_OK)
         except Exception:
             RateArticle(
@@ -236,3 +236,31 @@ class CommentsUpdateDeleteAPIView(RetrieveUpdateDestroyAPIView, CreateAPIView):
         comment.delete()
         return Response(
             {"message": {"Comment deleted successfully"}}, status.HTTP_200_OK)
+
+
+class ArticleTags(RetrieveUpdateAPIView):
+    permission_classes = (IsAuthenticated,)
+
+    def put(self, request, **kwargs):
+        data = request.data.get('article')
+        try:
+            article = Article.objects.get(slug=kwargs.get('slug', None))
+        except Article.DoesNotExist:
+            return Response({'response': 'Article not found'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        if request.user.username == article.user.username:
+            tags = data['tags']
+            if article.tags is None:
+                article.tags = tags
+            else:
+                article.tags.extend(tags)
+                # remove duplicates
+                article.tags = list(set(article.tags))
+            article.save()
+            return Response({'response': 'Successfully added tags'},
+                            status=status.HTTP_200_OK)
+
+        return Response(
+            {'response': 'You do not have permission to tag this article'},
+            status.HTTP_403_FORBIDDEN)
