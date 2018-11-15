@@ -12,7 +12,7 @@ from .serializers import (
     ArticleCreateSerializer,
     RateArticleSerializer,
     CommentsSerializer,
-    CommentHistorySerializer,)
+    CommentHistorySerializer, )
 from ..core.permissions import IsOwnerOrReadOnly
 from ..authentication.renderers import UserJSONRenderer
 from rest_framework.response import Response
@@ -243,6 +243,7 @@ class CommentsUpdateDeleteAPIView(RetrieveUpdateDestroyAPIView, CreateAPIView):
 
 class ArticleTags(RetrieveUpdateAPIView):
     permission_classes = (IsAuthenticated,)
+    serializer_class = ArticleSerializer
 
     def put(self, request, **kwargs):
         data = request.data.get('article')
