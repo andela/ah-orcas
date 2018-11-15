@@ -26,8 +26,6 @@ class TestSearch(APITestCase):
             format='json')
         self.token = resp.data['token']
 
-        assert resp.data['token'], 1
-
         article0 = Article(
             user=User.objects.get(username='jake'),
             body='It takes a Jacobian',

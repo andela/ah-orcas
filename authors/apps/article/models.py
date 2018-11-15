@@ -77,7 +77,7 @@ class Article(models.Model):
     )
 
     tags = ArrayField(
-        models.CharField(max_length=10, blank=True),
+        models.CharField(max_length=256, blank=True),
         blank=True,
         null=True
     )
