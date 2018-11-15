@@ -3,6 +3,7 @@ such as querysets and model instances
  to be converted to
 native Python datatypes that can then
 be easily rendered into JSON, XML or other content types.'''
+import math
 
 from rest_framework import serializers
 from django.apps import apps
@@ -116,14 +117,35 @@ class ArticleSerializer(serializers.ModelSerializer):
 
 
 class ArticleCreateSerializer(serializers.ModelSerializer):
+    time_to_read = serializers.CharField(required=False)
+    images = serializers.ListField(child=serializers.CharField(
+        max_length=1000), min_length=None, max_length=None, required=False)
+
     class Meta:
         model = TABLE
 
-        fields = fields
+        fields = fields + ('images', 'time_to_read',)
+
+    def get_time_to_read(self, body, images):
+        """
+        Calculates the time it takes to read a given article
+        average reading time for plain text = 200wpm
+        average reading time for images in articles = 15secs =0.25mins
+        """
+
+        image_view_time = 0
+        if images:
+            image_view_time = (len(images) * 0.25)
+        time_taken = math.ceil((len(list(body)) / 250) + image_view_time)
+        if time_taken <= 1:
+            return str(time_taken) + 'min'
+        return str(time_taken) + 'mins'
 
     def create(self, validated_data):
         instance = TABLE.objects.create(**validated_data)
         validated_data['slug'] = instance.slug
+        validated_data['time_to_read'] = self.get_time_to_read(
+            instance.body, validated_data.get('images'),)
 
         return validated_data
 

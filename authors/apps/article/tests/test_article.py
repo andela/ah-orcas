@@ -43,10 +43,22 @@ class TestArticles(TestCase):
                                self.user.token())
 
         self.namespace = 'article'
+        text = "Will it rain, Will it rain today, " \
+            "Will it rain today Will it rain today " \
+            "Will it rain today Will it rain today, " \
+            "Will it rain today Will it rain today " \
+            "Will it rain today Will it rain today " \
+            "Will it rain today Will it rain today," \
+            "Will it rain today Will it rain today Will it rain "
         self.body = {
             'title': faker.name(),
             'description': faker.text(),
             'body': faker.text(),
+        }
+        self.article_body = {
+            "title": "Test reading time 300 ",
+            "description": "Is a new day again?",
+            "body": text
         }
         self.create_url = reverse(self.namespace + ':create')
         self.list_url = reverse(self.namespace + ':list')
@@ -65,7 +77,12 @@ class TestArticles(TestCase):
 
     def test_create_article_api(self):
         response = self.client.post(self.create_url, self.body, format='json')
+        response1 = self.client.post(
+            self.create_url,
+            self.article_body,
+            format='json')
         self.assertEqual(201, response.status_code)
+        self.assertIn('2mins', str(response1.data))
 
     def test_retrieve_article_api(self):
         response = self.client.get(self.retrieve_url)
