@@ -55,6 +55,7 @@ INSTALLED_APPS = [
 
     'social_django',
     "authors.apps.article",
+    "authors.apps.bookmark",
 
 
 ]

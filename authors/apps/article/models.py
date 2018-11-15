@@ -195,3 +195,11 @@ class CommentHistory(models.Model):
                                          on_delete=models.CASCADE,
                                          db_column='original_comment')
     date_created = models.DateTimeField(auto_now=True)
+
+
+def check_article(slug):
+    try:
+        article = Article.objects.get(slug=slug)
+        return article
+    except Article.DoesNotExist:
+        return None

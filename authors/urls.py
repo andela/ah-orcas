@@ -41,4 +41,9 @@ urlpatterns = [
          include(
                  ('authors.apps.report.urls',
                   'report'),
-                 namespace='report'))]
+                 namespace='report')),
+    path('api/',
+         include(
+                 ('authors.apps.bookmark.urls',
+                  'bookmark'),
+                 namespace='bookmark'))]
