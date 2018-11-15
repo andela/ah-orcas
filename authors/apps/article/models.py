@@ -184,3 +184,14 @@ class Favorite(models.Model):
         User,
         related_name="favorites",
         on_delete=models.CASCADE)
+
+
+class CommentHistory(models.Model):
+    """
+     tracks comment edit history in Authors Haven
+    """
+    comment = models.TextField()
+    original_comment = models.ForeignKey(Comments,
+                                         on_delete=models.CASCADE,
+                                         db_column='original_comment')
+    date_created = models.DateTimeField(auto_now=True)

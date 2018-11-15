@@ -4,14 +4,15 @@ from rest_framework.permissions import AllowAny, \
 from rest_framework.views import APIView
 
 from authors.apps.article.models import Article, RateArticle, \
-    Comments
+    Comments, CommentHistory
 from authors.apps.article.renderers import CommentsRenderer
 from .serializers import (
     TABLE,
     ArticleSerializer,
     ArticleCreateSerializer,
     RateArticleSerializer,
-    CommentsSerializer)
+    CommentsSerializer,
+    CommentHistorySerializer,)
 from ..core.permissions import IsOwnerOrReadOnly
 from ..authentication.renderers import UserJSONRenderer
 from rest_framework.response import Response
@@ -198,6 +199,7 @@ class CommentsUpdateDeleteAPIView(RetrieveUpdateDestroyAPIView, CreateAPIView):
     query = Article.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly]
     serializer_class = CommentsSerializer
+    serializer_history = CommentHistorySerializer
 
     def get_object(self):
         article = get_object_or_404(Article, slug=self.kwargs["slug"])
@@ -218,6 +220,7 @@ class CommentsUpdateDeleteAPIView(RetrieveUpdateDestroyAPIView, CreateAPIView):
         context = {'request': request}
         comment = self.get_object()
         context['parent'] = Comments.objects.get(pk=comment.id)
+
         if context['parent']:
             serializer = self.serializer_class(data=data, context=context)
             serializer.is_valid(raise_exception=True)
@@ -264,3 +267,26 @@ class ArticleTags(RetrieveUpdateAPIView):
         return Response(
             {'response': 'You do not have permission to tag this article'},
             status.HTTP_403_FORBIDDEN)
+
+
+class CommentHistoryAPIView(generics.ListAPIView):
+    """This class gets all comment edit history"""
+    lookup_url_kwarg = 'pk'
+    serializer_class = CommentHistorySerializer
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        """
+        Overrides the default GET request from ListAPIView
+        Returns all comment edits for a particular comment
+        """
+
+        try:
+            comment = Comments.objects.get(pk=kwargs['id'])
+        except Comments.DoesNotExist:
+            return Response(
+                {"message": "Comment not found"},
+                status=status.HTTP_404_NOT_FOUND)
+        """If the queryset is populated, this returns a 200 OK response"""
+        self.queryset = CommentHistory.objects.filter(original_comment=comment)
+        return generics.ListAPIView.list(self, request, *args, **kwargs)
