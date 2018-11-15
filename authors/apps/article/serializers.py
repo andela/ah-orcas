@@ -6,9 +6,10 @@ be easily rendered into JSON, XML or other content types.'''
 
 from rest_framework import serializers
 from django.apps import apps
+from rest_framework.validators import UniqueTogetherValidator
 
 from authors.apps.profiles.models import UserProfile
-from .models import RateArticle, Comments
+from .models import RateArticle, Comments, Favorite
 from authors.apps.profiles.serializers import ProfileListSerializer
 
 TABLE = apps.get_model('article', 'Article')
@@ -81,7 +82,8 @@ class ArticleSerializer(serializers.ModelSerializer):
                            'Linkedin',
                            'twitter',
                            'mail',
-                           'url')
+                           'url',
+                           'favorited')
 
     def get_author(self, obj):
         try:
@@ -91,6 +93,14 @@ class ArticleSerializer(serializers.ModelSerializer):
             return serializer.data
         except BaseException:
             return {}
+
+    def get_favorited(self, instance):
+        try:
+            Favorite.objects.get(
+                user=self.context["request"].user.id, article=instance.id)
+            return True
+        except BaseException:
+            return False
 
     def update(self, instance, validated_data):
         instance.title = validated_data.get('title', instance.title)
@@ -185,3 +195,17 @@ class CommentsSerializer(serializers.ModelSerializer):
         instance.body = validated_data.get('body', instance.body)
         instance.save()
         return instance
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    """favorite serializer class"""
+    class Meta:
+        model = Favorite
+        fields = ('article', 'user')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Favorite.objects.all(),
+                fields=('article', 'user'),
+                message="Article already favorited"
+            )
+        ]

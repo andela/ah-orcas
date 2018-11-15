@@ -172,3 +172,15 @@ class Comments(TimestampedModel):
 
     def __str__(self):
         return self.body
+
+
+class Favorite(models.Model):
+    """favorites model"""
+    article = models.ForeignKey(
+        Article,
+        related_name="favorited",
+        on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        related_name="favorites",
+        on_delete=models.CASCADE)
