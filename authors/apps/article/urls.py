@@ -6,7 +6,6 @@ from .views import (
     ArticleDeleteAPIView,
     ArticleDetailAPIView,
     ArticleUpdateAPIView,
-    Rate,
     ArticleRate,
     CommentsListCreateView,
     CommentsUpdateDeleteAPIView,
@@ -14,8 +13,10 @@ from .views import (
 from .likes_dislike_views import (
     Like,
     Dislike,
-    FavoriteAPIView
+    FavoriteAPIView,
 )
+
+from .send_notifiactions import Rate
 
 schema_view = get_swagger_view(title="Article Comments")
 

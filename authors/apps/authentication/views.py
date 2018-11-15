@@ -1,7 +1,6 @@
 import os
 import jwt
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from rest_framework import generics, serializers, status
@@ -134,11 +133,10 @@ class ForgetPassword(APIView):
                 'A user with this email was not found.'
             )
         token = default_token_generator.make_token(user)
-        domain = get_current_site(request).domain
         hashed_email = jwt.encode(
             {"email": data['email']}, SECRET_KEY, algorithm='HS256')
-        our_link = "http://" + domain + '/api/users/reset/' + \
-            hashed_email.decode('UTF-8') + "/" + token
+        our_link = os.getenv('URL') + 'api/users/reset/' + \
+            hashed_email.decode('UTF-8') + "/" + str(token)
         msg = render_to_string('activate_account.html', {
             'user': user.username,
             "link": our_link

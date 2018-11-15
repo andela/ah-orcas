@@ -4,15 +4,13 @@ such as querysets and model instances
 native Python datatypes that can then
 be easily rendered into JSON, XML or other content types.'''
 import math
-
 from rest_framework import serializers
 from django.apps import apps
 from rest_framework.validators import UniqueTogetherValidator
-
-from authors.apps.profiles.models import UserProfile
-
 from .models import RateArticle, Comments, CommentHistory, Favorite
 from authors.apps.profiles.serializers import ProfileListSerializer
+from authors.apps.profiles.models import UserProfile
+
 
 TABLE = apps.get_model('article', 'Article')
 Profile = apps.get_model('profiles', 'UserProfile')
@@ -137,7 +135,9 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
         image_view_time = 0
         if images:
             image_view_time = (len(images) * 0.25)
-        time_taken = math.ceil((len(list(body)) / 250) + image_view_time)
+        time_taken = 0
+        if body:
+            time_taken = math.ceil((len(list(body)) / 250) + image_view_time)
         if time_taken <= 1:
             return str(time_taken) + 'min'
         return str(time_taken) + 'mins'
@@ -146,7 +146,7 @@ class ArticleCreateSerializer(serializers.ModelSerializer):
         instance = TABLE.objects.create(**validated_data)
         validated_data['slug'] = instance.slug
         validated_data['time_to_read'] = self.get_time_to_read(
-            instance.body, validated_data.get('images'),)
+            instance.body, validated_data.get('images'))
 
         return validated_data
 

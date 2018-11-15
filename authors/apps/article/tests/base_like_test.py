@@ -44,7 +44,7 @@ class BaseLikeTest(APITestCase):
         self.email = "test_user@gmail.com"
         self.name = "test"
         self.user = User(username=self.name, email=self.email)
-        self.user.set_password("@Winners11")
+        self.user.set_password("@Winffners11")
         self.user.save()
         self.user_id = User.objects.get(email=self.email).pk
         self.slug = "this-is-a-question"
@@ -78,3 +78,8 @@ class BaseLikeTest(APITestCase):
         self.view_likes_url = os.environ["URL"] + "api/article/rate/"
         self.articles_url = os.environ["URL"] + "api/article/"
         self.create_articles_url = os.environ["URL"] + "api/article/create"
+        self.get_notifications = os.environ["URL"] + "api/notifications"
+        self.edit_notifications = os.environ["URL"] + "api/notifications" +\
+            "1" + "follower"
+        self.edit_notifications_2 = os.environ["URL"] + "api/notifications" +\
+            "1" + "unfollower"

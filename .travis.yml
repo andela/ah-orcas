@@ -20,6 +20,8 @@ script:
   - python3 manage.py migrate profiles
   - python3 manage.py makemigrations article
   - python3 manage.py migrate article
+  - python3 manage.py makemigrations notifications
+  - python3 manage.py migrate notifications
   - python3 manage.py makemigrations report
   - python3 manage.py migrate report
   - python3 manage.py makemigrations

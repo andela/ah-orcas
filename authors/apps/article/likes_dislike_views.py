@@ -2,13 +2,16 @@ from rest_framework.exceptions import NotFound
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from ..authentication.renderers import UserJSONRenderer
 from rest_framework.permissions import IsAuthenticated
-
 from authors.apps.article.renderers import FavoriteJSONRenderer
 from authors.apps.article.serializers import FavoriteSerializer,\
     ArticleSerializer
+from .serializers import RateArticleSerializer
+from .models import RateArticle
 from .models import (Article,
                      LikeDislikeArticle, Favorite)
+from rest_framework.generics import CreateAPIView
 
 
 LOOKUP_FIELD = 'slug'
@@ -141,7 +144,7 @@ class Dislike(APIView):
             return Response(
                 {"response": disliked_article_response},
                 status=status.HTTP_200_OK)
-        except Exception as e:
+        except Exception:
             LikeDislikeArticle(
                 liker=disliker,
                 article=disliked_article,

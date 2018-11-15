@@ -34,6 +34,24 @@ class TestRateArticle(BaseLikeTest):
                 response.data))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_rate_article_twice(self):
+        """
+        test rate article.
+        """
+        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + self.token)
+        self.client.post(
+            self.rate_url,
+            self.rate_details,
+            format='json')
+        response = self.client.post(
+            self.rate_url,
+            self.rate_details,
+            format='json')
+        self.assertIn(
+            'successfully rated',
+                str(response.data))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
     def test_rate_article_not_found(self):
         """
         test whether rate article without article will fail.

@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly,\
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from authors.apps.profiles.models import UserProfile
+from authors.apps.profiles.models import UserProfile, Follow
 from authors.apps.profiles.renderers import ProfileJSONRenderer
 from authors.apps.profiles.serializers import ProfileSerializer, \
     ProfileListSerializer
@@ -111,8 +111,15 @@ class ProfileFollowAPIView(APIView):
             }, status=status.HTTP_409_CONFLICT)
 
         if check:
-            follower.follow(followee)
+            try:
+                follow = Follow.objects.get(
+                    follower=followee, followee=follower)
+                follower.follow(followee)
+            except Exception:
+                Follow(follower=followee, followee=follower).save()
+                follower.follow(followee)
         if not check:
+            Follow.objects.filter(follower=followee).delete()
             follower.unfollow(followee)
 
         serializer = self.serializer_class(followee, context={

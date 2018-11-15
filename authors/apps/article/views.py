@@ -1,16 +1,29 @@
+from rest_framework.generics import (
+    ListAPIView, CreateAPIView,
+    RetrieveUpdateAPIView,
+    RetrieveAPIView,
+    DestroyAPIView,
+    get_object_or_404, RetrieveUpdateDestroyAPIView)
+from django.db.models import Q
+from authors import settings
+from rest_framework.pagination import PageNumberPagination
+from rest_framework import status, generics, permissions, serializers
+from rest_framework.response import Response
+from ..core.permissions import IsOwnerOrReadOnly
 from django.http import Http404
-from rest_framework.permissions import AllowAny, \
-    IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticatedOrReadOnly,
+    IsAuthenticated)
 from rest_framework.views import APIView
-
-from authors.apps.article.models import Article, RateArticle, \
-    Comments, CommentHistory
+from authors.apps.article.models import (
+    Article,
+    Comments,
+    CommentHistory)
 from authors.apps.article.renderers import CommentsRenderer
-from .serializers import (
-    TABLE,
+from .serializers import (TABLE,
     ArticleSerializer,
     ArticleCreateSerializer,
-    RateArticleSerializer,
     CommentsSerializer,
     CommentHistorySerializer, )
 from ..core.permissions import IsOwnerOrReadOnly
@@ -25,7 +38,13 @@ from rest_framework.generics import (
     RetrieveUpdateAPIView,
     RetrieveAPIView,
     DestroyAPIView,
-    get_object_or_404, RetrieveUpdateDestroyAPIView)
+    get_object_or_404,
+    RetrieveUpdateDestroyAPIView)
+from .models import RateArticle
+from.send_notifiactions import (
+    send_article_notification,
+    send_followers_notification)
+
 
 LOOKUP_FIELD = 'slug'
 
@@ -66,7 +85,9 @@ class ArticleCreateAPIView(CreateAPIView):
     queryset = TABLE.objects.all()
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        instance = serializer.save(user=self.request.user)
+        send_followers_notification(instance,
+                                    self.request.user)
 
 
 class ArticleDetailAPIView(RetrieveAPIView):
@@ -97,16 +118,10 @@ class ArticleUpdateAPIView(RetrieveUpdateAPIView):
 
 
 class ArticleRate(APIView):
-    """
-    rate class article
-    """
     permission_classes = (IsAuthenticatedOrReadOnly,)
     renderer_classes = (UserJSONRenderer,)
 
     def get(self, request, **kwargs):
-        """
-        rate user view
-        """
         pk = kwargs.get("pk")
         rate_articles = None
         rate = 0
@@ -123,43 +138,6 @@ class ArticleRate(APIView):
             rate_value = rate / len(rate_articles)
         return Response(data={"rates": round(rate_value, 2)},
                         status=status.HTTP_200_OK)
-
-
-class Rate(CreateAPIView):
-    """
-    rate class article
-    """
-    permission_classes = (IsAuthenticated,)
-    renderer_classes = (UserJSONRenderer,)
-    serializer_class = RateArticleSerializer
-
-    def post(self, request, **kwargs):
-        """
-        rate user view
-        """
-        data = request.data.get('user', {})
-        serializer = self.serializer_class(data=data)
-        serializer.validate(data=data)
-        serializer.is_valid(raise_exception=True)
-        rate_article = None
-        try:
-            article = Article.objects.get(slug=data['slug'])
-        except Exception:
-            return Response({"response": "Article not found"},
-                            status=status.HTTP_204_NO_CONTENT)
-        rater = request.user
-        try:
-            rate_article = RateArticle.objects.get(
-                rater=rater, article=article)
-            rate_article.rate = data["rate"]
-            rate_article.save()
-            return Response({"response": "successfully rated"},
-                            status=status.HTTP_200_OK)
-        except Exception:
-            RateArticle(
-                rater=rater, article=article, rate=data["rate"]).save()
-            return Response(data={"response": "sucessfully rated"},
-                            status=status.HTTP_200_OK)
 
 
 class CommentsListCreateView(generics.ListCreateAPIView):
@@ -186,6 +164,7 @@ class CommentsListCreateView(generics.ListCreateAPIView):
             data=data, context=serializer_context)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        send_article_notification(self.kwargs["slug"], data)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def list(self, request, *args, slug=None, **kwargs):

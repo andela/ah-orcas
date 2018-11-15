@@ -34,11 +34,16 @@ urlpatterns = [
              namespace='profile')),
     path('api/',
          include(
-                 ('authors.apps.article.urls',
-                  'article'),
-                 namespace='article')),
+             ('authors.apps.article.urls',
+              'article'),
+             namespace='article')),
     path('api/',
          include(
-                 ('authors.apps.report.urls',
-                  'report'),
-                 namespace='report'))]
+             ('authors.apps.report.urls',
+              'report'),
+             namespace='report')),
+    path('api/',
+         include(
+             ('authors.apps.notifications.urls',
+              'notifications'),
+             namespace='notifications')), ]

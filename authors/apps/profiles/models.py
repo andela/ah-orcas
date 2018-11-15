@@ -54,3 +54,19 @@ class UserProfile(TimestampedModel):
     def is_followed_by(self, my_profile):
         """check if the the other profile is following my profile"""
         return self.followed_by.filter(pk=my_profile.pk).exists()
+
+
+class Follow(models.Model):
+    """
+    This model holds data for followees following follower
+    """
+    followee = models.ForeignKey(
+                                "profiles.UserProfile",
+                                related_name="I_am_following",
+                                on_delete=models.CASCADE
+                                )
+    follower = models.ForeignKey(
+                                "profiles.UserProfile",
+                                related_name="i_being_followed",
+                                on_delete=models.CASCADE
+                                )
