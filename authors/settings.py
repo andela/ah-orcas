@@ -26,6 +26,7 @@ SECRET_KEY = os.environ['SECRET']
 DEBUG = True
 
 CORS_ORIGIN_ALLOW_ALL = True
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
