@@ -11,7 +11,7 @@ from rest_framework.validators import UniqueTogetherValidator
 
 from authors.apps.profiles.models import UserProfile
 
-from .models import RateArticle, Comments, CommentHistory, Favorite
+from .models import RateArticle, Comments, CommentHistory, Favorite 
 from authors.apps.profiles.serializers import ProfileListSerializer
 
 TABLE = apps.get_model('article', 'Article')

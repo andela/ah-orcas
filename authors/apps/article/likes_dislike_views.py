@@ -8,7 +8,9 @@ from authors.apps.article.renderers import FavoriteJSONRenderer
 from authors.apps.article.serializers import FavoriteSerializer,\
     ArticleSerializer
 from .models import (Article,
-                     LikeDislikeArticle, Favorite)
+                     LikeDislikeArticle,
+                     Favorite,
+                     check_article)
 
 
 LOOKUP_FIELD = 'slug'
@@ -158,15 +160,16 @@ class FavoriteAPIView(APIView):
     renderer_classes = (FavoriteJSONRenderer,)
 
     def post(self, request, slug):
-        """favotite article view class"""
-        try:
-            article = Article.objects.get(slug=slug)
-        except Article.DoesNotExist:
+        """favorite article view class"""
+        article = check_article(slug)
+        if article is None:
             return Response({"Message": [
                 "That article does not exist"
             ]}, status.HTTP_204_NO_CONTENT)
+
         favorite = dict()
         favorite["user"] = request.user.id
+        # import pdb; pdb.set_trace()
         favorite["article"] = article.pk
         serializer = self.serializer_class(data=favorite)
         serializer.is_valid(raise_exception=True)
@@ -180,12 +183,14 @@ class FavoriteAPIView(APIView):
 
     def delete(self, request, slug):
         """unfavorite an article"""
-        try:
-            article = Article.objects.get(slug=slug)
-        except Article.DoesNotExist:
-            raise NotFound({"error": [
+
+        article = check_article(slug)
+
+        if article is None:
+            return Response({"Message": [
                 "That article does not exist"
-            ]})
+            ]}, status.HTTP_204_NO_CONTENT)
+
         try:
             favorite = Favorite.objects.get(
                 user=request.user.id, article=article.pk)

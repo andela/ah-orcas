@@ -35,3 +35,4 @@ class FavoriteJSONRenderer(JSONRenderer):
             if not status_code == status.HTTP_200_OK:
                 return super(FavoriteJSONRenderer, self).render(data)
         return super(FavoriteJSONRenderer, self).render(data)
+        
