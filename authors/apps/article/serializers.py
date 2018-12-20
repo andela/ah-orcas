@@ -1,3 +1,4 @@
+from authors.apps.profiles.serializers import ProfileListSerializer
 '''Serializers allow complex data
 such as querysets and model instances
  to be converted to
@@ -11,8 +12,12 @@ from rest_framework.validators import UniqueTogetherValidator
 
 from authors.apps.profiles.models import UserProfile
 
-from .models import RateArticle, Comments, CommentHistory, Favorite
-from authors.apps.profiles.serializers import ProfileListSerializer
+from .models import (
+    RateArticle,
+    Comments,
+    CommentHistory,
+    Favorite,
+    LikeDislikeArticle)
 
 TABLE = apps.get_model('article', 'Article')
 Profile = apps.get_model('profiles', 'UserProfile')
@@ -37,6 +42,9 @@ class ArticleSerializer(serializers.ModelSerializer):
     Linkedin = serializers.SerializerMethodField(read_only=True)
     twitter = serializers.SerializerMethodField(read_only=True)
     mail = serializers.SerializerMethodField(read_only=True)
+    likes = serializers.SerializerMethodField(read_only=True)
+    dislikes = serializers.SerializerMethodField(read_only=True)
+    comments = serializers.SerializerMethodField(read_only=True)
 
     update_url = serializers.HyperlinkedIdentityField(
         view_name=NAMESPACE + ':update', lookup_field='slug')
@@ -77,6 +85,18 @@ class ArticleSerializer(serializers.ModelSerializer):
         return 'mailto:?subject=New Article Alert&body={}'.format(
             obj.api_url(request=request))
 
+    def get_likes(self, obj):
+        return LikeDislikeArticle.objects.filter(
+            article=obj, is_liked=True).count()
+
+    def get_dislikes(self, obj):
+        dislikes = LikeDislikeArticle.objects.filter(
+            article=obj, is_disliked=True)
+        return dislikes.count()
+
+    def get_comments(self, obj):
+        return Comments.objects.filter(article__id=obj.id).count()
+
     class Meta:
         model = TABLE
 
@@ -85,7 +105,10 @@ class ArticleSerializer(serializers.ModelSerializer):
                            'twitter',
                            'mail',
                            'url',
-                           'favorited')
+                           'favorited',
+                           'likes',
+                           'dislikes',
+                           'comments')
 
     def get_author(self, obj):
         try:
