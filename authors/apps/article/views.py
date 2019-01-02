@@ -41,7 +41,7 @@ class ArticleListAPIView(ListAPIView):
     pagination_class = StandardPagination
 
     def get_queryset(self):
-        queryset = Article.objects.all()
+        queryset = Article.objects.order_by('-created_at')
         username = self.request.query_params.get('author', None)
         if username is not None:
             queryset = queryset.filter(user__username__iexact=username)
