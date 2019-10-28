@@ -14,7 +14,6 @@ that provides an improved slug field which can automatically:
 populate itself from another field and preserve
  uniqueness of the value'''
 from autoslug import AutoSlugField
-from versatileimagefield.fields import VersatileImageField
 
 
 class Article(models.Model):
@@ -48,24 +47,7 @@ class Article(models.Model):
         blank=True,
         null=True
     )
-    image = VersatileImageField(
-        'Image',
-        upload_to='article/',
-        width_field='width',
-        height_field='height',
-        blank=True,
-        null=True
-    )
-    height = models.PositiveIntegerField(
-        'Image Height',
-        blank=True,
-        null=True
-    )
-    width = models.PositiveIntegerField(
-        'Image Width',
-        blank=True,
-        null=True
-    )
+    image = models.URLField(blank=True)
     created_at = models.DateTimeField(
         _('Article field', 'created at'),
         auto_now_add=True,
