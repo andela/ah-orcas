@@ -13,7 +13,7 @@ coverage==4.5.1
 cryptography==2.3.1
 defusedxml==0.5.0
 dj-database-url==0.5.0
-Django==2.1.11
+Django==2.2.13
 django-allauth==0.38.0
 django-autoslug-iplweb==1.9.4
 django-cors-headers==2.4.0
@@ -65,6 +65,6 @@ uritemplate==3.0.0
 urllib3==1.24
 whitenoise==4.1
 wrapt==1.10.11
-Django==2.1.11
+Django==2.2.13
 django-autoslug-iplweb==1.9.4
 django-versatileimagefield==1.10
